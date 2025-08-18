@@ -9,6 +9,7 @@
     "vercel-build": "next build",
     "migrations:up": "node infra/scripts/init-db.js",
     "db:init": "node scripts/init-db.js",
+    "lint:prettier:check": "prettier --check .",
     "lint:prettier:fix": "prettier --write .",
     "lint:eslint:check": "next lint --dir .",
     "lint": "prettier --write . && next lint --dir .",
