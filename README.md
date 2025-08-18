@@ -1,72 +1,76 @@
 # Course Tracker (Next.js + TS)
 
-App para gerenciar cursos com índice em formato Telegram (#D001 etc.), checklist de aulas e controle de tempo (iniciar/pausar/parar).
+An app to manage courses with a Telegram-style index (#D001 etc.), lesson checklists, and time tracking (start/pause/stop).
 
 ## Stack
 
 - Next.js 14 (App Router) + React 18 + TypeScript
 - TailwindCSS
 - NextAuth (Credentials, JWT)
-- Postgres via `pg` (DAL simples) — pode adaptar para outro banco mantendo as interfaces
+- Postgres via `pg` (simple DAL) — can be adapted for other databases by maintaining the interfaces
 
-## Setup Rápido
+## Quick Setup
 
-1. **Clonar & instalar**
+1.  **Clone & install**
 
-   ```bash
-   npm i
-   cp .env.example .env.development
-   ```
+    ```bash
+    npm i
+    cp .env.example .env.development
+    ```
 
-2. **Subir Postgres (opcional)**
+2.  **Run Postgres (optional)**
 
-   ```bash
-   docker compose -f docker/compose.yaml --env-file .env.development up -d
-   ```
+    ```bash
+    docker compose -f docker/compose.yaml --env-file .env.development up -d
+    ```
 
-3. **Inicializar schema**
+3.  **Initialize schema**
 
-   ```bash
-   npm run db:init
-   ```
+    ```bash
+    npm run db:init
+    ```
 
-4. **Criar usuário**
+4.  **Create user**
 
-   - Faça um POST em `http://localhost:3000/api/register`:
-     ```json
-     { "name": "Gabriel", "email": "gabriel@example.com", "password": "123456" }
-     ```
+    - Make a POST request to `http://localhost:3000/api/register`:
+      ```json
+      {
+        "name": "Gabriel",
+        "email": "gabriel@example.com",
+        "password": "123456"
+      }
+      ```
 
-5. **Rodar**
-   ```bash
-   npm run dev
-   # abrir http://localhost:3000
-   ```
+5.  **Run**
+    ```bash
+    npm run dev
+    # open http://localhost:3000
+    ```
 
-## Fluxo
+## Workflow
 
-- Entrar com email/senha (NextAuth).
-- Criar curso em **/courses/new** colando o índice (exatamente como no Telegram, com linhas começando com `= Módulo ...` e as `#tags`).
-- Na tela do curso: marcar episódios e controlar tempo (iniciar/pausar/parar). O total é soma de sessões encerradas.
+- Log in with email/password (NextAuth).
+- Create a course at **/courses/new** by pasting the index (exactly as it appears in Telegram, with lines starting with `= Module ...` and the `#tags`).
+- On the course screen: check off episodes and control the timer (start/pause/stop). The total time is the sum of all completed sessions.
 
-## Banco (Postgres)
+## Database (Postgres)
 
-- Tabelas: `users`, `courses`, `modules`, `episodes`, `user_episode_progress`, `course_sessions`.
-- IDs como UUID (strings) geradas na app → facilita portar para outro DB.
-- Para outro banco, reimplemente `src/lib/database.ts` e mantenha a mesma API de `query(q, params)`.
+- Tables: `users`, `courses`, `modules`, `episodes`, `user_episode_progress`, `course_sessions`.
+- IDs are UUIDs (strings) generated in the app → this makes it easier to port to another DB.
+- For a different database, re-implement `src/lib/database.ts` and maintain the same `query(q, params)` API.
 
-## Observações
+## Notes
 
-- `stop` fecha a sessão atual e marca `completed_at` no curso.
-- Progresso = % de episódios concluídos.
-- Tempo total = soma de `(ended_at - started_at)` das sessões do curso.
-- Validação básica com Zod.
-- CSS simples com Tailwind.
+- `stop` closes the current session and sets `completed_at` on the course.
+- Progress = % of completed episodes.
+- Total time = sum of `(ended_at - started_at)` for the course's sessions.
+- Basic validation with Zod.
+- Simple CSS with Tailwind.
 
-## Próximos passos (sugestões)
+## Next Steps (suggestions)
 
-- Importar títulos/links reais por tag (se houver mapeamento externo).
-- Exibir tempo por módulo e por dia.
-- Exportar relatório CSV.
-- Notas por episódio.
-- Adapter para SQLite/Prisma/Drizzle, se preferir.
+- Import real titles/links by tag (if an external mapping exists).
+- Display time per module and per day.
+- Export a CSV report.
+- Notes per episode.
+- Adapt for SQLite/Prisma/Drizzle, if preferred.
