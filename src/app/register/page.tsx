@@ -17,15 +17,42 @@ export default function RegisterPage() {
     label: string;
     color: string;
   }>(null);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [passwordRequirements, setPasswordRequirements] = useState({
+    length: false,
+    uppercase: false,
+    number: false,
+    special: false,
+  });
 
   function evaluatePassword(pw: string) {
-    if (!pw) return null;
-    // critérios simples: tamanho, tipos de caracteres
+    if (!pw) {
+      setPasswordRequirements({
+        length: false,
+        uppercase: false,
+        number: false,
+        special: false,
+      });
+      return null;
+    }
+
+    // Verificar requisitos individuais
+    const requirements = {
+      length: pw.length >= 6,
+      uppercase: /[A-Z]/.test(pw),
+      number: /[0-9]/.test(pw),
+      special: /[^A-Za-z0-9]/.test(pw),
+    };
+    setPasswordRequirements(requirements);
+
+    // Calcular score baseado nos requisitos
     let score = 0;
-    if (pw.length >= 6) score++;
+    if (requirements.length) score++;
     if (pw.length >= 10) score++;
-    if (/[A-Z]/.test(pw)) score++;
-    if (/[^A-Za-z0-9]/.test(pw) || /[0-9]/.test(pw)) score++;
+    if (requirements.uppercase) score++;
+    if (requirements.number || requirements.special) score++;
+
     const labels = ["Muito fraca", "Fraca", "Ok", "Boa", "Forte"];
     const colors = [
       "bg-red-500",
@@ -33,7 +60,7 @@ export default function RegisterPage() {
       "bg-yellow-500",
       "bg-green-500",
       "bg-emerald-500",
-    ]; // tailwind classes
+    ];
     return { score, label: labels[score], color: colors[score] };
   }
 
@@ -101,44 +128,180 @@ export default function RegisterPage() {
           onChange={(e) => setEmail(e.target.value)}
         />
         <div>
-          <input
-            className="w-full px-3 py-2 rounded bg-gray-900 border border-gray-800"
-            placeholder="Senha"
-            type="password"
-            value={password}
-            onChange={(e) => {
-              const val = e.target.value;
-              setPassword(val);
-              setPasswordStrength(evaluatePassword(val));
-            }}
-          />
-          {passwordStrength && (
-            <div className="mt-1">
-              <div className="h-2 w-full bg-gray-800 rounded overflow-hidden">
+          <div className="relative">
+            <input
+              className="w-full px-3 py-2 pr-10 rounded bg-gray-900 border border-gray-800"
+              placeholder="Senha"
+              type={showPassword ? "text" : "password"}
+              value={password}
+              onChange={(e) => {
+                const val = e.target.value;
+                setPassword(val);
+                setPasswordStrength(evaluatePassword(val));
+              }}
+            />
+            <button
+              type="button"
+              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-200"
+              onClick={() => setShowPassword(!showPassword)}
+            >
+              {showPassword ? (
+                <svg
+                  className="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L3 3m6.878 6.878L21 21"
+                  />
+                </svg>
+              ) : (
+                <svg
+                  className="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                  />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                  />
+                </svg>
+              )}
+            </button>
+          </div>
+
+          {password && (
+            <div className="mt-2">
+              {/* Barra de força da senha */}
+              {passwordStrength && (
+                <div className="mb-2">
+                  <div className="h-2 w-full bg-gray-800 rounded overflow-hidden">
+                    <div
+                      className={`${passwordStrength.color} h-2 transition-all`}
+                      style={{
+                        width: `${((passwordStrength.score + 1) / 5) * 100}%`,
+                      }}
+                    />
+                  </div>
+                  <p className="text-xs mt-1 opacity-80">
+                    Força: {passwordStrength.label}
+                  </p>
+                </div>
+              )}
+
+              {/* Lista de requisitos */}
+              <div className="space-y-1">
                 <div
-                  className={`${passwordStrength.color} h-2 transition-all`}
-                  style={{
-                    width: `${((passwordStrength.score + 1) / 5) * 100}%`,
-                  }}
-                />
+                  className={`flex items-center text-xs ${passwordRequirements.length ? "text-green-400" : "text-gray-400"}`}
+                >
+                  <span className="mr-2">
+                    {passwordRequirements.length ? "✓" : "○"}
+                  </span>
+                  Pelo menos 6 caracteres
+                </div>
+                <div
+                  className={`flex items-center text-xs ${passwordRequirements.uppercase ? "text-green-400" : "text-gray-400"}`}
+                >
+                  <span className="mr-2">
+                    {passwordRequirements.uppercase ? "✓" : "○"}
+                  </span>
+                  Pelo menos 1 letra maiúscula
+                </div>
+                <div
+                  className={`flex items-center text-xs ${passwordRequirements.number ? "text-green-400" : "text-gray-400"}`}
+                >
+                  <span className="mr-2">
+                    {passwordRequirements.number ? "✓" : "○"}
+                  </span>
+                  Pelo menos 1 número
+                </div>
+                <div
+                  className={`flex items-center text-xs ${passwordRequirements.special ? "text-green-400" : "text-gray-400"}`}
+                >
+                  <span className="mr-2">
+                    {passwordRequirements.special ? "✓" : "○"}
+                  </span>
+                  Pelo menos 1 caractere especial
+                </div>
               </div>
-              <p className="text-xs mt-1 opacity-80">
-                Força: {passwordStrength.label}
-              </p>
-              <p className="text-[10px] leading-snug mt-1 opacity-60">
-                Dicas: use 10+ caracteres, inclua maiúsculas, números e
-                símbolos.
-              </p>
             </div>
           )}
         </div>
-        <input
-          className="w-full px-3 py-2 rounded bg-gray-900 border border-gray-800"
-          placeholder="Confirmar senha"
-          type="password"
-          value={confirm}
-          onChange={(e) => setConfirm(e.target.value)}
-        />
+        <div className="relative">
+          <input
+            className="w-full px-3 py-2 pr-10 rounded bg-gray-900 border border-gray-800"
+            placeholder="Confirmar senha"
+            type={showConfirmPassword ? "text" : "password"}
+            value={confirm}
+            onChange={(e) => setConfirm(e.target.value)}
+          />
+          <button
+            type="button"
+            className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-200"
+            onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+          >
+            {showConfirmPassword ? (
+              <svg
+                className="w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L3 3m6.878 6.878L21 21"
+                />
+              </svg>
+            ) : (
+              <svg
+                className="w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                />
+              </svg>
+            )}
+          </button>
+          {confirm && password && (
+            <div className="mt-1">
+              <div
+                className={`flex items-center text-xs ${password === confirm ? "text-green-400" : "text-red-400"}`}
+              >
+                <span className="mr-2">{password === confirm ? "✓" : "✗"}</span>
+                {password === confirm
+                  ? "Senhas coincidem"
+                  : "Senhas não coincidem"}
+              </div>
+            </div>
+          )}
+        </div>
         {error && <p className="text-sm text-red-400">{error}</p>}
         {success && <p className="text-sm text-green-400">Conta criada!</p>}
         <button
