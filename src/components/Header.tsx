@@ -1,5 +1,6 @@
 "use client";
-import React from "react";
+import React, { useState, useRef, useEffect } from "react";
+import Link from "next/link";
 import { useSession, signOut } from "next-auth/react";
 
 const Book = ({ className = "w-6 h-6" }: { className?: string }) => (
@@ -28,23 +29,56 @@ const Book = ({ className = "w-6 h-6" }: { className?: string }) => (
 
 export default function Header() {
   const { data: session } = useSession();
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    function onClick(e: MouseEvent) {
+      if (!ref.current) return;
+      if (!ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener("click", onClick);
+    return () => document.removeEventListener("click", onClick);
+  }, []);
+
   return (
     <header className="bg-gray-800 text-white p-4 shadow-md">
       <div className="container mx-auto flex justify-between items-center">
         <div className="flex items-center gap-3">
           <Book className="w-8 h-8 text-blue-400" />
           <h1 className="text-2xl font-bold">Course Tracker</h1>
+          <Link
+            href="/courses"
+            className="ml-3 px-3 py-1 rounded bg-white/10 hover:bg-white/20 text-sm"
+          >
+            Meus cursos
+          </Link>
         </div>
-        <div>
+        <div ref={ref} className="relative">
           {session?.user ? (
             <div className="flex items-center gap-3">
-              <span className="text-sm opacity-80">{session.user.name}</span>
               <button
-                onClick={() => signOut({ callbackUrl: "/" })}
-                className="px-3 py-1 rounded bg-white/10 hover:bg-white/20 text-sm"
+                onClick={() => setOpen((s) => !s)}
+                className="text-sm opacity-80 px-2 py-1 rounded hover:bg-white/5"
               >
-                Sair
+                {session.user.name}
               </button>
+              {open && (
+                <div className="absolute right-0 mt-2 w-48 bg-gray-900 border border-gray-700 rounded shadow-lg z-50">
+                  <a
+                    href="/settings"
+                    className="block px-3 py-2 text-sm hover:bg-gray-800"
+                  >
+                    Configurações
+                  </a>
+                  <button
+                    onClick={() => signOut({ callbackUrl: "/" })}
+                    className="w-full text-left px-3 py-2 text-sm hover:bg-gray-800"
+                  >
+                    Sair
+                  </button>
+                </div>
+              )}
             </div>
           ) : null}
         </div>
