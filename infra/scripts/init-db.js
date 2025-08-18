@@ -29,12 +29,12 @@ function buildConnectionString() {
 async function main() {
   const sql = fs.readFileSync(
     path.join(__dirname, "..", "sql", "init.sql"),
-    "utf8"
+    "utf8",
   );
   const connectionString = buildConnectionString();
   if (!connectionString) {
     console.error(
-      "DATABASE_URL não está definida e não foi possível construir a partir de POSTGRES_*"
+      "DATABASE_URL não está definida e não foi possível construir a partir de POSTGRES_*",
     );
     process.exit(1);
   }

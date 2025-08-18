@@ -14,7 +14,7 @@ const schema = z.object({
 
 export async function POST(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: { id: string } },
 ) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.email)
@@ -35,7 +35,7 @@ export async function POST(
 
 export async function GET(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: { id: string } },
 ) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.email)
@@ -46,7 +46,7 @@ export async function GET(
   const { query } = await import("@/lib/database");
   const r = await query(
     `SELECT id, EXTRACT(EPOCH FROM (COALESCE(ended_at, NOW()) - started_at))::bigint AS seconds, ended_at IS NULL AS active FROM course_sessions WHERE user_id=$1 AND course_id=$2 ORDER BY started_at DESC LIMIT 1`,
-    [uid, params.id]
+    [uid, params.id],
   );
   if (!r.rows.length) return NextResponse.json({ active: false, seconds: 0 });
   const row = r.rows[0];

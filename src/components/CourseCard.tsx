@@ -30,18 +30,18 @@ export default function CourseCard({
   onSelect,
 }: {
   course: any;
-  onSelect: (c: any) => void;
+  onSelect: (_c: any) => void;
 }) {
   const totalEpisodes =
     (course.modules || []).reduce(
       (acc: any, mod: any) => acc + (mod.episodes?.length || 0),
-      0
+      0,
     ) || Number(course.total_episodes || course.totalEpisodes || 0);
   const completedEpisodes =
     (course.modules || []).reduce(
       (acc: any, mod: any) =>
         acc + (mod.episodes?.filter((e: any) => e.completed).length || 0),
-      0
+      0,
     ) || Number(course.done_episodes || course.doneEpisodes || 0);
   const progress =
     totalEpisodes > 0
@@ -80,7 +80,7 @@ export default function CourseCard({
         <span>
           Tempo total:{" "}
           {formatTime(
-            Number(course.total_seconds || course.totalTimeSpent || 0)
+            Number(course.total_seconds || course.totalTimeSpent || 0),
           )}
         </span>
       </div>

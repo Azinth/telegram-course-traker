@@ -1,0 +1,25 @@
+{
+  "extends": [
+    "eslint:recommended",
+    "plugin:jest/recommended",
+    "next/core-web-vitals",
+    "prettier"
+  ],
+  "env": {
+    "es2020": true,
+    "node": true,
+    "browser": true
+  },
+  "rules": {
+    "import/no-anonymous-default-export": "off",
+    "react/no-unescaped-entities": "off",
+    "@next/next/no-img-element": "warn",
+    "react-hooks/exhaustive-deps": "warn",
+    "no-undef": "off",
+    "no-empty": ["warn", { "allowEmptyCatch": true }],
+    "no-unused-vars": [
+      "warn",
+      { "argsIgnorePattern": "^_", "varsIgnorePattern": "^_" }
+    ]
+  }
+}

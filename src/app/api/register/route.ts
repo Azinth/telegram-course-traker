@@ -7,19 +7,35 @@ import { query } from "@/lib/database";
 const schema = z.object({
   name: z.string().min(2),
   email: z.string().email(),
-  password: z.string().min(6)
+  password: z
+    .string()
+    .min(6)
+    .regex(
+      /^(?=.*[A-Z])(?=.*\d).+$/,
+      "Senha deve conter ao menos uma letra maiúscula e um número",
+    ),
 });
 
-export async function POST(req: Request){
+export async function POST(req: Request) {
   try {
     const body = await req.json();
     const data = schema.parse(body);
-    const exists = await query("SELECT 1 FROM users WHERE email=$1", [data.email]);
-    if (exists.rowCount) return NextResponse.json({ error: "Email já cadastrado" }, { status: 400 });
+    const exists = await query("SELECT 1 FROM users WHERE email=$1", [
+      data.email,
+    ]);
+    if (exists.rowCount)
+      return NextResponse.json(
+        { error: "Email já cadastrado" },
+        { status: 409 },
+      );
     const hash = await bcrypt.hash(data.password, 10);
-    const user = await createUser({ name: data.name, email: data.email, passwordHash: hash });
+    const user = await createUser({
+      name: data.name,
+      email: data.email,
+      passwordHash: hash,
+    });
     return NextResponse.json({ ok: true, user });
-  } catch (e:any) {
+  } catch (e: any) {
     return NextResponse.json({ error: e.message || "Erro" }, { status: 400 });
   }
 }

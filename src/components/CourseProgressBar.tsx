@@ -38,8 +38,8 @@ export default function CourseProgressBar({
     percent < 30
       ? "from-red-400 via-yellow-400 to-yellow-500"
       : percent < 70
-      ? "from-yellow-400 via-amber-400 to-lime-400"
-      : "from-green-500 via-emerald-500 to-green-400";
+        ? "from-yellow-400 via-amber-400 to-lime-400"
+        : "from-green-500 via-emerald-500 to-green-400";
 
   // build segment positions: start/end percent for each module
   const segmentPositions = useMemo(() => {

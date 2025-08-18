@@ -15,7 +15,7 @@ export default function CourseClient({ course }: { course: any }) {
   const [noteEpisodeId, setNoteEpisodeId] = useState<string | null>(null);
   const [favorites, setFavorites] = useState<Record<string, boolean>>({});
   const [noteInitialContent, setNoteInitialContent] = useState<string | null>(
-    null
+    null,
   );
   // removido estado de último episódio para barra linear
 
@@ -55,7 +55,7 @@ export default function CourseClient({ course }: { course: any }) {
       data.modules.forEach((m: any) =>
         (m.episodes || []).forEach((e: any) => {
           if (e.favorited) favs[e.id] = true;
-        })
+        }),
       );
       setFavorites(favs);
     } catch {}
@@ -68,7 +68,7 @@ export default function CourseClient({ course }: { course: any }) {
       }
       clearTimeout(t);
     };
-  }, [data.id]);
+  }, [data.id, data.modules]);
 
   async function toggleEpisode(ep: any) {
     setBusy(true);
@@ -250,7 +250,7 @@ export default function CourseClient({ course }: { course: any }) {
           <div className="mt-4">
             {(() => {
               const episodes = data.modules.flatMap(
-                (m: any) => m.episodes || []
+                (m: any) => m.episodes || [],
               );
               const done = episodes.filter((e: any) => e.completed).length;
               const segments = data.modules.map((m: any) => ({
@@ -385,7 +385,7 @@ export default function CourseClient({ course }: { course: any }) {
               next.modules = next.modules.map((m: any) => ({
                 ...m,
                 episodes: (m.episodes || []).map((e: any) =>
-                  e.id === noteEpisodeId ? { ...e, note_content: content } : e
+                  e.id === noteEpisodeId ? { ...e, note_content: content } : e,
                 ),
               }));
             } catch (e) {}

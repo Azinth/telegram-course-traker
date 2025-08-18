@@ -9,7 +9,10 @@ export type ParsedIndex = { modules: ParsedModule[] };
 const TAG_REGEX = /#[A-Za-z]+\d+/g;
 
 export function parseIndex(input: string): ParsedIndex {
-  const lines = input.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+  const lines = input
+    .split(/\r?\n/)
+    .map((l) => l.trim())
+    .filter(Boolean);
   const modules: ParsedModule[] = [];
   let current: ParsedModule | null = null;
 

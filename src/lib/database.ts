@@ -3,9 +3,11 @@ import { config } from "dotenv";
 config({ path: ".env.development", override: false });
 
 function isVercel() {
-  return process.env.VERCEL === "1"
-    || process.env.VERCEL_ENV === "production"
-    || process.env.VERCEL_ENV === "preview";
+  return (
+    process.env.VERCEL === "1" ||
+    process.env.VERCEL_ENV === "production" ||
+    process.env.VERCEL_ENV === "preview"
+  );
 }
 
 export async function getNewClient() {
@@ -16,7 +18,10 @@ export async function getNewClient() {
     if (!databaseUrl) throw new Error("DATABASE_URL não está definida");
 
     let connectionString = databaseUrl;
-    if (databaseUrl.includes("localhost") || databaseUrl.includes("127.0.0.1")) {
+    if (
+      databaseUrl.includes("localhost") ||
+      databaseUrl.includes("127.0.0.1")
+    ) {
       const vercelDatabaseUrl =
         process.env.POSTGRES_URL ||
         process.env.VERCEL_POSTGRES_URL ||

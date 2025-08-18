@@ -3,16 +3,17 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { getCourseDetail } from "@/lib/repos";
 
-export async function GET(_: Request, { params }: { params: { id: string } }){
+export async function GET(_: Request, { params }: { params: { id: string } }) {
   const session = await getServerSession(authOptions);
-  if (!session?.user?.email) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  if (!session?.user?.email)
+    return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   const uid = await userId(session.user.email);
   const data = await getCourseDetail(uid, params.id);
   if (!data) return NextResponse.json({ error: "not_found" }, { status: 404 });
   return NextResponse.json(data);
 }
 
-async function userId(email: string): Promise<string>{
+async function userId(email: string): Promise<string> {
   const { query } = await import("@/lib/database");
   const res = await query("SELECT id FROM users WHERE email=$1", [email]);
   return res.rows[0].id as string;

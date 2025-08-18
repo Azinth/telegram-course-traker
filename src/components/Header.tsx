@@ -1,5 +1,6 @@
 "use client";
 import React from "react";
+import { useSession, signOut } from "next-auth/react";
 
 const Book = ({ className = "w-6 h-6" }: { className?: string }) => (
   <svg
@@ -26,12 +27,26 @@ const Book = ({ className = "w-6 h-6" }: { className?: string }) => (
 );
 
 export default function Header() {
+  const { data: session } = useSession();
   return (
     <header className="bg-gray-800 text-white p-4 shadow-md">
       <div className="container mx-auto flex justify-between items-center">
         <div className="flex items-center gap-3">
           <Book className="w-8 h-8 text-blue-400" />
           <h1 className="text-2xl font-bold">Course Tracker</h1>
+        </div>
+        <div>
+          {session?.user ? (
+            <div className="flex items-center gap-3">
+              <span className="text-sm opacity-80">{session.user.name}</span>
+              <button
+                onClick={() => signOut({ callbackUrl: "/" })}
+                className="px-3 py-1 rounded bg-white/10 hover:bg-white/20 text-sm"
+              >
+                Sair
+              </button>
+            </div>
+          ) : null}
         </div>
       </div>
     </header>

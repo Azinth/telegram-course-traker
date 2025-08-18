@@ -8,7 +8,7 @@ export default function AddCourseModal({
 }: {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (name: string, index: string) => void;
+  onSave: (_name: string, _index: string) => void;
 }) {
   const [courseName, setCourseName] = useState("");
   const [courseIndex, setCourseIndex] = useState("");

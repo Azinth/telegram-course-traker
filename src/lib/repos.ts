@@ -14,7 +14,7 @@ export async function createUser({
   const id = uuid();
   await query(
     "INSERT INTO users (id, name, email, password_hash) VALUES ($1,$2,$3,$4)",
-    [id, name, email, passwordHash]
+    [id, name, email, passwordHash],
   );
   return { id, name, email };
 }
@@ -31,7 +31,7 @@ export async function createCourseFromIndex({
   const courseId = uuid();
   await query(
     "INSERT INTO courses (id, user_id, title, raw_index) VALUES ($1,$2,$3,$4)",
-    [courseId, userId, title, rawIndex]
+    [courseId, userId, title, rawIndex],
   );
   const parsed = parseIndex(rawIndex);
   let modulePos = 1;
@@ -39,7 +39,7 @@ export async function createCourseFromIndex({
     const moduleId = uuid();
     await query(
       "INSERT INTO modules (id, course_id, title, position) VALUES ($1,$2,$3,$4)",
-      [moduleId, courseId, m.title, modulePos++]
+      [moduleId, courseId, m.title, modulePos++],
     );
     let epPos = 1;
     for (const tag of m.tags) {
@@ -47,11 +47,11 @@ export async function createCourseFromIndex({
       const epTitle = `Aula ${tag}`;
       await query(
         "INSERT INTO episodes (id, module_id, tag, title, position) VALUES ($1,$2,$3,$4,$5)",
-        [epId, moduleId, tag, epTitle, epPos++]
+        [epId, moduleId, tag, epTitle, epPos++],
       );
       await query(
         "INSERT INTO user_episode_progress (user_id, episode_id, completed) VALUES ($1,$2,$3) ON CONFLICT DO NOTHING",
-        [userId, epId, false]
+        [userId, epId, false],
       );
     }
   }
@@ -62,7 +62,7 @@ export async function listCoursesWithProgress(userId: string) {
   const courses = (
     await query(
       "SELECT id, title, created_at, completed_at FROM courses WHERE user_id=$1 ORDER BY created_at DESC",
-      [userId]
+      [userId],
     )
   ).rows;
 
@@ -70,13 +70,13 @@ export async function listCoursesWithProgress(userId: string) {
     const total = (
       await query(
         `SELECT COUNT(*)::int AS total FROM episodes e JOIN modules m ON e.module_id=m.id WHERE m.course_id=$1`,
-        [c.id]
+        [c.id],
       )
     ).rows[0].total;
     const done = (
       await query(
         `SELECT COUNT(*)::int AS done FROM user_episode_progress p JOIN episodes e ON p.episode_id=e.id JOIN modules m ON e.module_id=m.id WHERE p.user_id=$1 AND m.course_id=$2 AND p.completed=TRUE`,
-        [userId, c.id]
+        [userId, c.id],
       )
     ).rows[0].done;
 
@@ -84,7 +84,7 @@ export async function listCoursesWithProgress(userId: string) {
     const time = (
       await query(
         `SELECT COALESCE(SUM(EXTRACT(EPOCH FROM (COALESCE(ended_at, NOW()) - started_at))),0)::bigint AS seconds FROM course_sessions WHERE user_id=$1 AND course_id=$2`,
-        [userId, c.id]
+        [userId, c.id],
       )
     ).rows[0].seconds;
     c.progress = total ? Math.round((done / total) * 100) : 0;
@@ -100,14 +100,14 @@ export async function getCourseDetail(userId: string, courseId: string) {
   const course = (
     await query(
       "SELECT id, title, created_at, completed_at FROM courses WHERE id=$1 AND user_id=$2",
-      [courseId, userId]
+      [courseId, userId],
     )
   ).rows[0];
   if (!course) return null;
   const modules = (
     await query(
       "SELECT id, title, position FROM modules WHERE course_id=$1 ORDER BY position ASC",
-      [courseId]
+      [courseId],
     )
   ).rows;
   for (const m of modules) {
@@ -125,7 +125,7 @@ export async function getCourseDetail(userId: string, courseId: string) {
       WHERE e.module_id=$2
       ORDER BY e.position ASC
     `,
-        [userId, m.id]
+        [userId, m.id],
       )
     ).rows;
     m.episodes = episodes;
@@ -134,7 +134,7 @@ export async function getCourseDetail(userId: string, courseId: string) {
   const time = (
     await query(
       `SELECT COALESCE(SUM(EXTRACT(EPOCH FROM (COALESCE(ended_at, NOW()) - started_at))),0)::bigint AS seconds FROM course_sessions WHERE user_id=$1 AND course_id=$2`,
-      [userId, courseId]
+      [userId, courseId],
     )
   ).rows[0].seconds;
   course.modules = modules;
@@ -146,7 +146,7 @@ export async function getCourseDetail(userId: string, courseId: string) {
 export async function upsertEpisodeNote(
   userId: string,
   episodeId: string,
-  content: string
+  content: string,
 ) {
   const id = uuid();
   await query(
@@ -154,14 +154,14 @@ export async function upsertEpisodeNote(
      VALUES ($1,$2,$3,$4)
      ON CONFLICT (user_id, episode_id)
      DO UPDATE SET content=EXCLUDED.content, updated_at=NOW()`,
-    [id, userId, episodeId, content]
+    [id, userId, episodeId, content],
   );
 }
 
 export async function getEpisodeNote(userId: string, episodeId: string) {
   const { rows } = await query(
     `SELECT content FROM episode_notes WHERE user_id=$1 AND episode_id=$2`,
-    [userId, episodeId]
+    [userId, episodeId],
   );
   return rows[0]?.content || null;
 }
@@ -169,18 +169,18 @@ export async function getEpisodeNote(userId: string, episodeId: string) {
 export async function toggleFavoriteEpisode(userId: string, episodeId: string) {
   const { rows } = await query(
     `SELECT 1 FROM episode_favorites WHERE user_id=$1 AND episode_id=$2`,
-    [userId, episodeId]
+    [userId, episodeId],
   );
   if (rows.length) {
     await query(
       `DELETE FROM episode_favorites WHERE user_id=$1 AND episode_id=$2`,
-      [userId, episodeId]
+      [userId, episodeId],
     );
     return { favorited: false };
   } else {
     await query(
       `INSERT INTO episode_favorites (user_id, episode_id) VALUES ($1,$2)`,
-      [userId, episodeId]
+      [userId, episodeId],
     );
     return { favorited: true };
   }
@@ -189,7 +189,7 @@ export async function toggleFavoriteEpisode(userId: string, episodeId: string) {
 export async function isEpisodeFavorited(userId: string, episodeId: string) {
   const { rows } = await query(
     `SELECT 1 FROM episode_favorites WHERE user_id=$1 AND episode_id=$2`,
-    [userId, episodeId]
+    [userId, episodeId],
   );
   return rows.length > 0;
 }
@@ -197,7 +197,7 @@ export async function isEpisodeFavorited(userId: string, episodeId: string) {
 export async function toggleEpisode(
   userId: string,
   episodeId: string,
-  completed: boolean
+  completed: boolean,
 ) {
   await query(
     `
@@ -205,19 +205,19 @@ export async function toggleEpisode(
     VALUES ($1,$2,$3, CASE WHEN $3 THEN NOW() ELSE NULL END)
     ON CONFLICT (user_id, episode_id) DO UPDATE SET completed=$3, completed_at=CASE WHEN $3 THEN NOW() ELSE NULL END
   `,
-    [userId, episodeId, completed]
+    [userId, episodeId, completed],
   );
 }
 
 export async function startSession(userId: string, courseId: string) {
   const { rows } = await query(
     `SELECT id FROM course_sessions WHERE user_id=$1 AND course_id=$2 AND ended_at IS NULL LIMIT 1`,
-    [userId, courseId]
+    [userId, courseId],
   );
   if (rows.length) return rows[0];
   const { rows: r2 } = await query(
     `INSERT INTO course_sessions (id, user_id, course_id, started_at) VALUES ($1,$2,$3, NOW()) RETURNING id`,
-    [uuid(), userId, courseId]
+    [uuid(), userId, courseId],
   );
   return r2[0];
 }
@@ -225,13 +225,13 @@ export async function startSession(userId: string, courseId: string) {
 export async function pauseOrStopSession(userId: string, courseId: string) {
   await query(
     `UPDATE course_sessions SET ended_at=NOW() WHERE user_id=$1 AND course_id=$2 AND ended_at IS NULL`,
-    [userId, courseId]
+    [userId, courseId],
   );
 }
 
 export async function markCourseCompleted(userId: string, courseId: string) {
   await query(
     `UPDATE courses SET completed_at=NOW() WHERE id=$1 AND user_id=$2`,
-    [courseId, userId]
+    [courseId, userId],
   );
 }

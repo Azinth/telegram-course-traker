@@ -10,21 +10,27 @@ export const authOptions: NextAuthOptions = {
       name: "Credentials",
       credentials: {
         email: { label: "Email", type: "text" },
-        password: { label: "Password", type: "password" }
+        password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) return null;
-        const res = await query("SELECT id, name, email, password_hash FROM users WHERE email=$1", [credentials.email]);
+        const res = await query(
+          "SELECT id, name, email, password_hash FROM users WHERE email=$1",
+          [credentials.email],
+        );
         const user = res.rows[0];
         if (!user) return null;
-        const ok = await bcrypt.compare(credentials.password, user.password_hash);
+        const ok = await bcrypt.compare(
+          credentials.password,
+          user.password_hash,
+        );
         if (!ok) return null;
         return { id: user.id, name: user.name, email: user.email } as User;
-      }
-    })
+      },
+    }),
   ],
   pages: {
-    signIn: "/login"
+    signIn: "/login",
   },
-  secret: process.env.NEXTAUTH_SECRET
+  secret: process.env.NEXTAUTH_SECRET,
 };

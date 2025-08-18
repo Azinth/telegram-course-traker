@@ -7,7 +7,7 @@ interface Props {
   open: boolean;
   onClose: () => void;
   initialContent?: string | null;
-  onSaved?: (content: string) => void;
+  onSaved?: (_content: string) => void;
 }
 export default function EpisodeNoteModal({
   episodeId,
@@ -36,7 +36,7 @@ export default function EpisodeNoteModal({
         })
         .finally(() => setLoading(false));
     }
-  }, [open, episodeId]);
+  }, [open, episodeId, initialContent]);
 
   async function save() {
     if (!episodeId) return;

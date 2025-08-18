@@ -9,7 +9,7 @@ export default function CourseListClient({
 }: {
   initialCourses: any[];
 }) {
-  const [courses, setCourses] = useState(initialCourses || []);
+  const [courses, _setCourses] = useState(initialCourses || []);
   const [modalOpen, setModalOpen] = useState(false);
   const router = useRouter();
 
@@ -17,7 +17,7 @@ export default function CourseListClient({
     router.push(`/courses/${c.id}`);
   }
 
-  async function handleSave(name: string, index: string) {
+  async function handleSave(_name: string, _index: string) {
     // simple POST to create course; server route not present maybe, fallback: reload
     try {
       await fetch("/api/register", { method: "POST" });
@@ -29,8 +29,8 @@ export default function CourseListClient({
   return (
     <div>
       <div className="grid md:grid-cols-2 gap-4">
-        {courses.map((c: any) => (
-          <CourseCard key={c.id} course={c} onSelect={handleSelect} />
+        {courses.map((_c: any) => (
+          <CourseCard key={_c.id} course={_c} onSelect={handleSelect} />
         ))}
       </div>
       <div className="mt-6">
