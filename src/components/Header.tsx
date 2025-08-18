@@ -47,12 +47,14 @@ export default function Header() {
         <div className="flex items-center gap-3">
           <Book className="w-8 h-8 text-blue-400" />
           <h1 className="text-2xl font-bold">Course Tracker</h1>
-          <Link
-            href="/courses"
-            className="ml-3 px-3 py-1 rounded bg-white/10 hover:bg-white/20 text-sm"
-          >
-            Meus cursos
-          </Link>
+          {session?.user && (
+            <Link
+              href="/courses"
+              className="ml-3 px-3 py-1 rounded bg-white/10 hover:bg-white/20 text-sm hidden md:inline-block"
+            >
+              Meus cursos
+            </Link>
+          )}
         </div>
         <div ref={ref} className="relative">
           {session?.user ? (
@@ -65,6 +67,12 @@ export default function Header() {
               </button>
               {open && (
                 <div className="absolute right-0 mt-2 w-48 bg-gray-900 border border-gray-700 rounded shadow-lg z-50">
+                  <Link
+                    href="/courses"
+                    className="block px-3 py-2 text-sm hover:bg-gray-800 md:hidden"
+                  >
+                    Meus cursos
+                  </Link>
                   <a
                     href="/settings"
                     className="block px-3 py-2 text-sm hover:bg-gray-800"
