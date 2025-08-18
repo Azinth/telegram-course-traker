@@ -3,6 +3,7 @@ import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import Timer from "@/components/Timer";
 import EpisodeNoteModal from "@/components/EpisodeNoteModal";
+import CourseProgressBar from "@/components/CourseProgressBar";
 
 export default function CourseClient({ course }: { course: any }) {
   const [data, setData] = useState(course);
@@ -16,6 +17,7 @@ export default function CourseClient({ course }: { course: any }) {
   const [noteInitialContent, setNoteInitialContent] = useState<string | null>(
     null
   );
+  // removido estado de último episódio para barra linear
 
   // Sync timer state with server
   useEffect(() => {
@@ -244,6 +246,28 @@ export default function CourseClient({ course }: { course: any }) {
           />
           <div className="mt-3 text-sm text-gray-400">
             Progresso geral: {progress}%
+          </div>
+          <div className="mt-4">
+            {(() => {
+              const episodes = data.modules.flatMap(
+                (m: any) => m.episodes || []
+              );
+              const done = episodes.filter((e: any) => e.completed).length;
+              const segments = data.modules.map((m: any) => ({
+                id: m.id,
+                title: m.title,
+                count: (m.episodes || []).length,
+              }));
+              return (
+                <CourseProgressBar
+                  done={done}
+                  total={episodes.length}
+                  totalSeconds={Number(data.total_seconds || 0)}
+                  segments={segments}
+                  animateSteps={true}
+                />
+              );
+            })()}
           </div>
         </div>
       </div>
