@@ -2,6 +2,7 @@ import type { NextAuthOptions, User } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { query } from "@/lib/database";
 import bcrypt from "bcryptjs";
+import { verifyRecaptcha } from "@/lib/recaptcha";
 
 export const authOptions: NextAuthOptions = {
   session: { strategy: "jwt" },
@@ -11,9 +12,16 @@ export const authOptions: NextAuthOptions = {
       credentials: {
         email: { label: "Email", type: "text" },
         password: { label: "Password", type: "password" },
+        recaptchaToken: { label: "reCAPTCHA", type: "text" },
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) return null;
+        if (!credentials.recaptchaToken) return null;
+        const rec = await verifyRecaptcha(credentials.recaptchaToken, {
+          action: "login",
+          minScore: 0.4,
+        });
+        if (!rec.ok) return null;
         const res = await query(
           "SELECT id, name, email, password_hash FROM users WHERE email=$1",
           [credentials.email],

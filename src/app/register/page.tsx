@@ -1,6 +1,8 @@
 "use client";
 import { useState } from "react";
 import { signIn } from "next-auth/react";
+import { executeRecaptcha } from "@/lib/recaptcha-client";
+import RecaptchaScript from "@/components/RecaptchaScript";
 
 export default function RegisterPage() {
   const [name, setName] = useState("");
@@ -57,10 +59,11 @@ export default function RegisterPage() {
     }
     setLoading(true);
     try {
+      const recaptchaToken = await executeRecaptcha("register");
       const res = await fetch("/api/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email, password }),
+        body: JSON.stringify({ name, email, password, recaptchaToken }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Falha ao registrar");
@@ -81,6 +84,7 @@ export default function RegisterPage() {
 
   return (
     <div className="max-w-md mx-auto">
+      <RecaptchaScript />
       <h1 className="text-2xl font-semibold mb-4">Criar conta</h1>
       <form onSubmit={handleSubmit} className="space-y-3">
         <input

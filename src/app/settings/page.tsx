@@ -1,5 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
+import { executeRecaptcha } from "@/lib/recaptcha-client";
+import RecaptchaScript from "@/components/RecaptchaScript";
 
 export default function SettingsPage() {
   const [name, setName] = useState("");
@@ -58,10 +60,11 @@ export default function SettingsPage() {
     setLoading(true);
     setMsg(null);
     try {
+      const recaptchaToken = await executeRecaptcha("update_name");
       const res = await fetch("/api/user/name", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name }),
+        body: JSON.stringify({ name, recaptchaToken }),
       });
       const j = await res.json();
       if (!res.ok) throw new Error(j.error || "Erro");
@@ -78,10 +81,11 @@ export default function SettingsPage() {
     setLoading(true);
     setMsg(null);
     try {
+      const recaptchaToken = await executeRecaptcha("change_password");
       const res = await fetch("/api/user/password", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ currentPassword, password }),
+        body: JSON.stringify({ currentPassword, password, recaptchaToken }),
       });
       const j = await res.json();
       if (!res.ok) throw new Error(j.error || "Erro");
@@ -117,6 +121,7 @@ export default function SettingsPage() {
 
   return (
     <div className="max-w-lg mx-auto">
+      <RecaptchaScript />
       <h1 className="text-2xl font-semibold mb-6">Configurações</h1>
       <form onSubmit={updateName} className="space-y-3 mb-6">
         <label className="text-sm opacity-80">Nome</label>

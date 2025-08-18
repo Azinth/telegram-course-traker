@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createUser } from "@/lib/repos";
+import { verifyRecaptcha } from "@/lib/recaptcha";
 import bcrypt from "bcryptjs";
 import { query } from "@/lib/database";
 
@@ -14,12 +15,22 @@ const schema = z.object({
       /^(?=.*[A-Z])(?=.*\d).+$/,
       "Senha deve conter ao menos uma letra maiúscula e um número",
     ),
+  recaptchaToken: z.string().min(10),
 });
 
 export async function POST(req: Request) {
   try {
     const body = await req.json();
     const data = schema.parse(body);
+    const rec = await verifyRecaptcha(data.recaptchaToken, {
+      action: "register",
+      minScore: 0.4,
+    });
+    if (!rec.ok)
+      return NextResponse.json(
+        { error: "Falha na verificação reCAPTCHA" },
+        { status: 400 },
+      );
     const exists = await query("SELECT 1 FROM users WHERE email=$1", [
       data.email,
     ]);

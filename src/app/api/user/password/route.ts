@@ -5,6 +5,7 @@ import { z } from "zod";
 import bcrypt from "bcryptjs";
 import { updateUserPassword } from "@/lib/repos";
 import { query } from "@/lib/database";
+import { verifyRecaptcha } from "@/lib/recaptcha";
 
 const schema = z.object({
   currentPassword: z.string().min(1),
@@ -15,6 +16,7 @@ const schema = z.object({
       /^(?=.*[A-Z])(?=.*\d).*$/,
       "Senha deve conter ao menos uma letra maiúscula e um número",
     ),
+  recaptchaToken: z.string().min(10),
 });
 
 export async function POST(req: Request) {
@@ -23,7 +25,16 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   try {
     const body = await req.json();
-    const { currentPassword, password } = schema.parse(body);
+    const { currentPassword, password, recaptchaToken } = schema.parse(body);
+    const rec = await verifyRecaptcha(recaptchaToken, {
+      action: "change_password",
+      minScore: 0.4,
+    });
+    if (!rec.ok)
+      return NextResponse.json(
+        { error: "Falha na verificação reCAPTCHA" },
+        { status: 400 },
+      );
     const res = await query(
       "SELECT id, password_hash FROM users WHERE email=$1",
       [session.user.email],

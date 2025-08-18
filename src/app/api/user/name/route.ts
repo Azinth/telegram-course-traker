@@ -4,8 +4,12 @@ import { authOptions } from "@/lib/auth";
 import { z } from "zod";
 import { updateUserName } from "@/lib/repos";
 import { query } from "@/lib/database";
+import { verifyRecaptcha } from "@/lib/recaptcha";
 
-const schema = z.object({ name: z.string().min(2) });
+const schema = z.object({
+  name: z.string().min(2),
+  recaptchaToken: z.string().min(10),
+});
 
 export async function POST(req: Request) {
   const session = (await getServerSession(authOptions as any)) as any;
@@ -13,7 +17,16 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   try {
     const body = await req.json();
-    const { name } = schema.parse(body);
+    const { name, recaptchaToken } = schema.parse(body);
+    const rec = await verifyRecaptcha(recaptchaToken, {
+      action: "update_name",
+      minScore: 0.4,
+    });
+    if (!rec.ok)
+      return NextResponse.json(
+        { error: "Falha na verificação reCAPTCHA" },
+        { status: 400 },
+      );
     // get user id
     const res = await query("SELECT id FROM users WHERE email=$1", [
       session.user.email,

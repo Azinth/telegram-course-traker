@@ -1,21 +1,30 @@
 "use client";
 import { signIn } from "next-auth/react";
 import { useState } from "react";
+import { executeRecaptcha } from "@/lib/recaptcha-client";
+import RecaptchaScript from "@/components/RecaptchaScript";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
-    await signIn("credentials", {
-      email,
-      password,
-      redirect: true,
-      callbackUrl: "/courses",
-    });
+    try {
+      const token = await executeRecaptcha("login");
+      await signIn("credentials", {
+        email,
+        password,
+        recaptchaToken: token,
+        redirect: true,
+        callbackUrl: "/courses",
+      });
+    } catch (e) {
+      // opcional: exibir erro de recaptcha
+    }
   }
   return (
     <div className="max-w-md mx-auto">
+      <RecaptchaScript />
       <h1 className="text-2xl font-semibold mb-4">Entrar</h1>
       <form onSubmit={handleLogin} className="space-y-3">
         <input
