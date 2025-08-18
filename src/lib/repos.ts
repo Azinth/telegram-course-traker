@@ -235,3 +235,14 @@ export async function markCourseCompleted(userId: string, courseId: string) {
     [courseId, userId],
   );
 }
+
+export async function updateUserName(userId: string, name: string) {
+  await query(`UPDATE users SET name=$1 WHERE id=$2`, [name, userId]);
+}
+
+export async function updateUserPassword(userId: string, passwordHash: string) {
+  await query(`UPDATE users SET password_hash=$1 WHERE id=$2`, [
+    passwordHash,
+    userId,
+  ]);
+}
