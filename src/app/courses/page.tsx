@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { listCoursesWithProgress } from "@/lib/repos";
@@ -21,12 +20,6 @@ export default async function CoursesPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold">Meus cursos</h1>
-        <Link
-          className="px-3 py-2 rounded bg-white/10 hover:bg-white/20"
-          href="/courses/new"
-        >
-          Novo curso
-        </Link>
       </div>
       <CourseListClient initialCourses={courses} />
     </div>
