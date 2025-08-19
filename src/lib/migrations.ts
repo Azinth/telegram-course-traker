@@ -233,6 +233,9 @@ export class MigrationService {
         child.kill("SIGTERM");
         reject(new Error(`Migration execution timed out after ${timeout}ms`));
       }, timeout);
+      try {
+        timeoutId.unref?.();
+      } catch (e) {}
 
       child.on("close", (code) => {
         clearTimeout(timeoutId);
@@ -282,7 +285,12 @@ export class MigrationService {
             `Migration attempt ${attempt} failed, retrying in ${delay}ms:`,
             lastError.message,
           );
-          await new Promise((resolve) => setTimeout(resolve, delay));
+          await new Promise((resolve) => {
+            const t = setTimeout(resolve, delay);
+            try {
+              t.unref?.();
+            } catch (e) {}
+          });
         }
       }
     }

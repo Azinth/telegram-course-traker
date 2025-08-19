@@ -2,6 +2,7 @@ import { MigrationService, migrationService } from "../migrations";
 import { getNewClient } from "../database";
 import { spawn } from "child_process";
 import { EventEmitter } from "events";
+//eslint-disable-next-line no-unused-vars
 import * as fs from "fs/promises";
 
 // Mock dependencies
@@ -103,7 +104,7 @@ describe("MigrationService", () => {
 
       // Mock the getPendingMigrations method directly
       jest
-        .spyOn(service, "getPendingMigrations")
+        .spyOn(service as any, "getPendingMigrations")
         .mockResolvedValue(["001_test", "002_test"]);
 
       const status = await service.getMigrationStatus();
@@ -129,7 +130,7 @@ describe("MigrationService", () => {
 
       // Mock the getPendingMigrations method directly
       jest
-        .spyOn(service, "getPendingMigrations")
+        .spyOn(service as any, "getPendingMigrations")
         .mockResolvedValue(["003_posts"]);
 
       const status = await service.getMigrationStatus();
@@ -152,7 +153,7 @@ describe("MigrationService", () => {
       });
 
       // Mock the getPendingMigrations method directly
-      jest.spyOn(service, "getPendingMigrations").mockResolvedValue([]);
+      jest.spyOn(service as any, "getPendingMigrations").mockResolvedValue([]);
 
       const status = await service.getMigrationStatus();
 
@@ -172,7 +173,7 @@ describe("MigrationService", () => {
       mockClient.query.mockResolvedValueOnce({ rows: [{ exists: false }] });
 
       // Mock the getPendingMigrations method to simulate fs.readdir failure
-      jest.spyOn(service, "getPendingMigrations").mockResolvedValue([]);
+      jest.spyOn(service as any, "getPendingMigrations").mockResolvedValue([]);
 
       const status = await service.getMigrationStatus();
 
