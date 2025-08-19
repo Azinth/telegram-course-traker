@@ -444,8 +444,9 @@ try {
   // but without running the constructor.
   // This keeps imports safe in CI/tests while allowing tests to instantiate
   // the class themselves to assert constructor behavior.
-  // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
-  _migrationService = Object.create(MigrationService.prototype) as MigrationService;
+  _migrationService = Object.create(
+    MigrationService.prototype,
+  ) as MigrationService;
 }
 
 export const migrationService = _migrationService;
