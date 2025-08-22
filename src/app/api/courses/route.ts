@@ -7,6 +7,11 @@ import { z } from "zod";
 const createSchema = z.object({
   title: z.string().min(3),
   index: z.string().min(3),
+  options: z
+    .object({
+      dedupeWithinModule: z.boolean().optional(),
+    })
+    .optional(),
 });
 
 export async function GET() {
@@ -53,8 +58,9 @@ export async function POST(req: Request) {
       userId: uid,
       title: data.title,
       rawIndex: data.index,
+      options: data.options,
     });
-    return NextResponse.json({ id: c.id });
+    return NextResponse.json({ id: c.id, summary: c.summary });
   } catch (e: any) {
     return NextResponse.json({ error: e?.message || "Erro" }, { status: 400 });
   }

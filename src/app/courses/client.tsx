@@ -19,18 +19,29 @@ export default function CourseListClient({
     router.push(`/courses/${c.id}`);
   }
 
-  async function handleSave(title: string, index: string) {
+  async function handleSave(title: string, payloadOrIndex: any) {
     // POST to create course
     try {
+      // payloadOrIndex may be the index string (old) or a JSON string with { index, options }
+      let index: string;
+      let options: any = undefined;
+      try {
+        const parsed =
+          typeof payloadOrIndex === "string"
+            ? JSON.parse(payloadOrIndex)
+            : payloadOrIndex;
+        index = parsed.index ?? payloadOrIndex;
+        options = parsed.options ?? undefined;
+      } catch {
+        index = payloadOrIndex;
+      }
+
       const response = await fetch("/api/courses", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          title,
-          index,
-        }),
+        body: JSON.stringify({ title, index, options }),
       });
 
       if (!response.ok) {
