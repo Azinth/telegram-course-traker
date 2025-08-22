@@ -40,11 +40,12 @@ export async function POST(req: Request) {
     const body = await req.json();
     const data = createSchema.parse(body);
 
-    // validate parsed tags before attempting inserts so we can return
-    // a friendly error when tags already exist (episodes.tag is UNIQUE)
-    const { parseIndex } = await import("@/lib/parser");
-    const parsed = parseIndex(data.index);
-    const tags = parsed.modules.flatMap((m) => m.tags);
+    // validate parsed tags before attempting inserts
+    const { parseIndexHierarchical } = await import("@/lib/parser");
+    const parsed = parseIndexHierarchical(data.index, data.options);
+    const tags = parsed.modules.flatMap((m) =>
+      m.sections.flatMap((s) => s.tags),
+    );
     if (!tags.length)
       return NextResponse.json(
         { error: "Índice inválido: sem tags encontradas" },

@@ -10,7 +10,8 @@ export default function CourseListClient({
 }: {
   initialCourses: any[];
 }) {
-  const [courses, _setCourses] = useState(initialCourses || []);
+  const [courses, setCourses] = useState(initialCourses || []);
+  const [justAddedId, setJustAddedId] = useState<string | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const router = useRouter();
   const toast = useToast();
@@ -54,12 +55,21 @@ export default function CourseListClient({
         throw new Error(msg);
       }
 
-      // Redireciona direto para a página do curso recém-criado
-      const { id } = await response.json();
-      // como haverá navegação, agende um toast de sucesso para a próxima tela
-      toast.showNextPage("Curso criado com sucesso!", "success");
+      // Mantém o usuário na lista e injeta o curso recém-criado
+      const { id, summary } = await response.json();
+      const newCourse = {
+        id,
+        title,
+        created_at: new Date().toISOString(),
+        // Sem módulos ainda no cliente; usa contadores agregados
+        total_episodes: (summary?.created ?? 0) + (summary?.reused ?? 0),
+        done_episodes: 0,
+        total_seconds: 0,
+      } as any;
+      setCourses((prev: any[]) => [newCourse, ...prev]);
+      setJustAddedId(id);
       setModalOpen(false);
-      router.push(`/courses/${id}`);
+      toast.success("Curso adicionado com sucesso!");
     } catch (error) {
       console.error("Error creating course:", error);
       try {
@@ -75,7 +85,19 @@ export default function CourseListClient({
     <div>
       <div className="grid md:grid-cols-2 gap-4">
         {courses.map((_c: any) => (
-          <CourseCard key={_c.id} course={_c} onSelect={handleSelect} />
+          <div
+            key={_c.id}
+            className={
+              _c.id === justAddedId
+                ? "animate-[fadeInUp_300ms_ease-out]"
+                : undefined
+            }
+            onAnimationEnd={() => {
+              if (_c.id === justAddedId) setJustAddedId(null);
+            }}
+          >
+            <CourseCard course={_c} onSelect={handleSelect} />
+          </div>
         ))}
       </div>
       <div className="mt-6">
