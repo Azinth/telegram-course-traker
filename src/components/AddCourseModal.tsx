@@ -240,7 +240,10 @@ export default function AddCourseModal({
             <div className="mt-6 flex justify-end gap-4">
               <button
                 onClick={onClose}
-                className="px-4 py-2 bg-gray-600 rounded hover:bg-gray-500"
+                disabled={saving}
+                className={`px-4 py-2 bg-gray-600 rounded ${
+                  saving ? "opacity-50 cursor-not-allowed" : "hover:bg-gray-500"
+                }`}
               >
                 Cancelar
               </button>
@@ -257,6 +260,23 @@ export default function AddCourseModal({
               </button>
             </div>
           </div>
+
+          {saving && (
+            <div className="fixed inset-0 z-[60] flex items-center justify-center">
+              <div className="absolute inset-0 bg-black/60" />
+              <div className="relative bg-gray-800 border border-gray-700 rounded-xl px-6 py-5 shadow-2xl w-[90%] max-w-md text-center">
+                <div className="absolute left-0 top-0 w-full h-1 overflow-hidden rounded-t-xl">
+                  <div className="h-full w-1/3 bg-blue-500 animate-[indeterminate_1.2s_ease_infinite]" />
+                </div>
+                <div className="mx-auto mb-4 w-12 h-12 border-4 border-white/20 border-t-white rounded-full animate-spin" />
+                <div className="text-lg font-semibold">Adicionando curso…</div>
+                <div className="text-sm text-gray-300 mt-1">
+                  Isso pode levar alguns segundos enquanto analisamos o índice e
+                  criamos os módulos.
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </>

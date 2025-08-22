@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import CourseCard from "@/components/CourseCard";
 import AddCourseModal from "@/components/AddCourseModal";
 import { useRouter } from "next/navigation";
@@ -19,6 +19,13 @@ export default function CourseListClient({
   function handleSelect(c: any) {
     router.push(`/courses/${c.id}`);
   }
+
+  // Mantenha o destaque visível por mais tempo (ex.: 2.2s)
+  useEffect(() => {
+    if (!justAddedId) return;
+    const t = setTimeout(() => setJustAddedId(null), 2200);
+    return () => clearTimeout(t);
+  }, [justAddedId]);
 
   async function handleSave(title: string, payloadOrIndex: any) {
     // POST to create course
@@ -89,12 +96,9 @@ export default function CourseListClient({
             key={_c.id}
             className={
               _c.id === justAddedId
-                ? "animate-[fadeInUp_300ms_ease-out]"
+                ? "animate-[fadeInUp_700ms_ease-out] glow-success-strong"
                 : undefined
             }
-            onAnimationEnd={() => {
-              if (_c.id === justAddedId) setJustAddedId(null);
-            }}
           >
             <CourseCard course={_c} onSelect={handleSelect} />
           </div>
