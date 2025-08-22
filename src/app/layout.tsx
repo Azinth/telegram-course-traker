@@ -5,6 +5,7 @@ import Providers from "./providers";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import type { Session } from "next-auth";
+import { ToastProvider } from "@/components/ToastProvider";
 
 export default async function RootLayout({
   children,
@@ -15,11 +16,13 @@ export default async function RootLayout({
     authOptions as any,
   )) as Session | null;
   return (
-    <html lang="pt-BR">
+    <html lang="pt-BR" suppressHydrationWarning>
       <body className="min-h-screen bg-gray-950 text-gray-100">
         <Providers session={_session}>
-          <Header />
-          <main className="mx-auto max-w-5xl px-4 py-6">{children}</main>
+          <ToastProvider>
+            <Header />
+            <main className="mx-auto max-w-5xl px-4 py-6">{children}</main>
+          </ToastProvider>
         </Providers>
       </body>
     </html>

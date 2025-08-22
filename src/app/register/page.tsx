@@ -1,10 +1,12 @@
 "use client";
 import { useState } from "react";
+import { useToast } from "@/components/ToastProvider";
 import { signIn } from "next-auth/react";
 import { executeRecaptcha } from "@/lib/recaptcha-client";
 import RecaptchaScript from "@/components/RecaptchaScript";
 
 export default function RegisterPage() {
+  const toast = useToast();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -96,6 +98,8 @@ export default function RegisterPage() {
       if (!res.ok) throw new Error(data.error || "Falha ao registrar");
       setSuccess(true);
       // opcional: login automático
+      // como haverá redirect, agende um toast para a próxima página
+      toast.showNextPage("Usuário criado com sucesso!", "success");
       await signIn("credentials", {
         email,
         password,
@@ -103,7 +107,11 @@ export default function RegisterPage() {
         callbackUrl: "/courses",
       });
     } catch (err: any) {
-      setError(err.message);
+      const msg = err?.message || "Falha ao registrar";
+      setError(msg);
+      try {
+        toast.error(msg);
+      } catch {}
     } finally {
       setLoading(false);
     }

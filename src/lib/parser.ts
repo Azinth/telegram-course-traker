@@ -7,6 +7,7 @@ export type ParsedModule = { title: string; tags: string[] };
 export type ParsedIndex = { modules: ParsedModule[] };
 
 const TAG_REGEX = /#[A-Za-z]+\d+/g;
+const HEADING_PREFIX = /^=+\s*/; // linhas que começam com um ou mais '='
 
 export function parseIndex(input: string): ParsedIndex {
   const lines = input
@@ -17,17 +18,15 @@ export function parseIndex(input: string): ParsedIndex {
   let current: ParsedModule | null = null;
 
   for (const line of lines) {
-    if (line.startsWith("=")) {
+    if (HEADING_PREFIX.test(line)) {
       if (current) modules.push(current);
-      current = { title: line.replace(/^=\s*/, ""), tags: [] };
-    } else {
-      const tags = line.match(TAG_REGEX) || [];
-      if (tags.length) {
-        if (!current) {
-          current = { title: "Sem Título", tags: [] };
-        }
-        current.tags.push(...tags);
-      }
+      current = { title: line.replace(HEADING_PREFIX, ""), tags: [] };
+      continue;
+    }
+    const tags = line.match(TAG_REGEX) || [];
+    if (tags.length) {
+      if (!current) current = { title: "Sem Título", tags: [] };
+      current.tags.push(...tags);
     }
   }
   if (current) modules.push(current);

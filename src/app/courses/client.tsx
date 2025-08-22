@@ -3,6 +3,7 @@ import React, { useState } from "react";
 import CourseCard from "@/components/CourseCard";
 import AddCourseModal from "@/components/AddCourseModal";
 import { useRouter } from "next/navigation";
+import { useToast } from "@/components/ToastProvider";
 
 export default function CourseListClient({
   initialCourses,
@@ -12,18 +13,51 @@ export default function CourseListClient({
   const [courses, _setCourses] = useState(initialCourses || []);
   const [modalOpen, setModalOpen] = useState(false);
   const router = useRouter();
+  const toast = useToast();
 
   function handleSelect(c: any) {
     router.push(`/courses/${c.id}`);
   }
 
-  async function handleSave(_name: string, _index: string) {
-    // simple POST to create course; server route not present maybe, fallback: reload
+  async function handleSave(title: string, index: string) {
+    // POST to create course
     try {
-      await fetch("/api/register", { method: "POST" });
-    } catch (e) {}
-    // after create, refresh the page
-    router.refresh();
+      const response = await fetch("/api/courses", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          title,
+          index,
+        }),
+      });
+
+      if (!response.ok) {
+        let msg = `HTTP error! status: ${response.status}`;
+        try {
+          const j = await response.json();
+          if (j?.error) msg = j.error;
+        } catch {}
+        console.error("Falha ao criar curso:", msg);
+        throw new Error(msg);
+      }
+
+      // Redireciona direto para a página do curso recém-criado
+      const { id } = await response.json();
+      // como haverá navegação, agende um toast de sucesso para a próxima tela
+      toast.showNextPage("Curso criado com sucesso!", "success");
+      setModalOpen(false);
+      router.push(`/courses/${id}`);
+    } catch (error) {
+      console.error("Error creating course:", error);
+      try {
+        const msg = (error as any)?.message || "Falha ao criar curso";
+        toast.error(msg);
+      } catch {}
+      // Propaga para o modal exibir
+      throw error;
+    }
   }
 
   return (

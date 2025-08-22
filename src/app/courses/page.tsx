@@ -1,11 +1,11 @@
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { listCoursesWithProgress } from "@/lib/repos";
-import { query } from "@/lib/database";
 import { redirect } from "next/navigation";
 import CourseListClient from "@/app/courses/client";
 
 async function userId(email: string) {
+  const { query } = await import("@/lib/database");
   const res = await query("SELECT id FROM users WHERE email=$1", [email]);
   return res.rows[0].id as string;
 }

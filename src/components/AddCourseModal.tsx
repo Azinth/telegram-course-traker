@@ -8,22 +8,36 @@ export default function AddCourseModal({
 }: {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (_name: string, _index: string) => void;
+  onSave: (_name: string, _index: string) => Promise<void> | void;
 }) {
   const [courseName, setCourseName] = useState("");
   const [courseIndex, setCourseIndex] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
 
   if (!isOpen) return null;
 
-  const handleSave = () => {
+  const handleSave = async () => {
+    setError(null);
     if (!courseName || !courseIndex) {
-      alert("Por favor, preencha o nome e o índice do curso.");
+      setError("Por favor, preencha o nome e o índice do curso.");
       return;
     }
-    onSave(courseName, courseIndex);
-    setCourseName("");
-    setCourseIndex("");
-    onClose();
+    try {
+      setSaving(true);
+      const maybePromise = onSave(courseName, courseIndex);
+      if (maybePromise && typeof (maybePromise as any).then === "function") {
+        await maybePromise;
+      }
+      setCourseName("");
+      setCourseIndex("");
+      onClose();
+    } catch (e: any) {
+      console.error("Falha ao salvar curso:", e);
+      setError(e?.message || "Não foi possível criar o curso.");
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -45,6 +59,14 @@ export default function AddCourseModal({
             rows={10}
             className="w-full p-2 bg-gray-700 rounded border border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-sm"
           />
+          {error && (
+            <div
+              className="text-red-400 text-sm whitespace-pre-wrap"
+              role="alert"
+            >
+              {error}
+            </div>
+          )}
         </div>
         <div className="mt-6 flex justify-end gap-4">
           <button
@@ -55,9 +77,14 @@ export default function AddCourseModal({
           </button>
           <button
             onClick={handleSave}
-            className="px-4 py-2 bg-blue-600 rounded hover:bg-blue-500 font-semibold"
+            disabled={saving}
+            className={`px-4 py-2 rounded font-semibold ${
+              saving
+                ? "bg-blue-600/60 cursor-not-allowed"
+                : "bg-blue-600 hover:bg-blue-500"
+            }`}
           >
-            Salvar Curso
+            {saving ? "Salvando..." : "Salvar Curso"}
           </button>
         </div>
       </div>
