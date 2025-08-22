@@ -29,7 +29,7 @@ CREATE TABLE IF NOT EXISTS modules (
 CREATE TABLE IF NOT EXISTS episodes (
   id TEXT PRIMARY KEY,
   module_id TEXT NOT NULL REFERENCES modules(id) ON DELETE CASCADE,
-  tag TEXT UNIQUE NOT NULL,
+  tag TEXT NOT NULL,
   title TEXT,
   position INTEGER NOT NULL
 );
@@ -55,5 +55,7 @@ CREATE TABLE IF NOT EXISTS course_sessions (
 -- Helpful indexes
 CREATE INDEX IF NOT EXISTS idx_modules_course ON modules(course_id);
 CREATE INDEX IF NOT EXISTS idx_episodes_module ON episodes(module_id);
+-- garantir unicidade de tag dentro do módulo (não global)
+CREATE UNIQUE INDEX IF NOT EXISTS idx_episodes_module_tag_unique ON episodes(module_id, tag);
 CREATE INDEX IF NOT EXISTS idx_progress_user ON user_episode_progress(user_id);
 CREATE INDEX IF NOT EXISTS idx_sessions_user_course ON course_sessions(user_id, course_id);
