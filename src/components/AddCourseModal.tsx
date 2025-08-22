@@ -15,6 +15,7 @@ export default function AddCourseModal({
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [dedupeWithinModule, setDedupeWithinModule] = useState(true);
+  const [promoteModuloHeadings, setPromoteModuloHeadings] = useState(true);
   const [preview, setPreview] = useState<null | {
     modules: Array<{
       title: string;
@@ -53,7 +54,7 @@ export default function AddCourseModal({
         courseName,
         JSON.stringify({
           index: courseIndex,
-          options: { dedupeWithinModule },
+          options: { dedupeWithinModule, promoteModuloHeadings },
         }) as any,
       );
       if (maybePromise && typeof (maybePromise as any).then === "function") {
@@ -71,6 +72,7 @@ export default function AddCourseModal({
   };
 
   // Build and fetch preview (server-aware for existing tags)
+  // Debounce quando o índice muda
   useEffect(() => {
     let ignore = false;
     async function run() {
@@ -84,7 +86,10 @@ export default function AddCourseModal({
         const res = await fetch("/api/courses/preview", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ index: trimmed }),
+          body: JSON.stringify({
+            index: trimmed,
+            options: { promoteModuloHeadings },
+          }),
         });
         if (!res.ok) throw new Error("Falha ao gerar preview");
         const j = await res.json();
@@ -101,7 +106,38 @@ export default function AddCourseModal({
       ignore = true;
       clearTimeout(t);
     };
-  }, [courseIndex]);
+  }, [courseIndex, promoteModuloHeadings]);
+
+  // Atualização imediata quando apenas o toggle muda (sem debounce)
+  useEffect(() => {
+    let ignore = false;
+    async function runImmediate() {
+      const trimmed = courseIndex.trim();
+      if (!trimmed) return;
+      try {
+        setLoadingPreview(true);
+        const res = await fetch("/api/courses/preview", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            index: trimmed,
+            options: { promoteModuloHeadings },
+          }),
+        });
+        if (!res.ok) throw new Error("Falha ao gerar preview");
+        const j = await res.json();
+        if (!ignore) setPreview(j);
+      } catch (e) {
+        if (!ignore) setPreview(null);
+      } finally {
+        if (!ignore) setLoadingPreview(false);
+      }
+    }
+    runImmediate();
+    return () => {
+      ignore = true;
+    };
+  }, [promoteModuloHeadings]);
 
   return (
     <>
@@ -133,6 +169,15 @@ export default function AddCourseModal({
                     onChange={(e) => setDedupeWithinModule(e.target.checked)}
                   />
                   Remover duplicatas no mesmo módulo (recomendado)
+                </label>
+                <label className="inline-flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    className="accent-blue-600"
+                    checked={promoteModuloHeadings}
+                    onChange={(e) => setPromoteModuloHeadings(e.target.checked)}
+                  />
+                  Promover “Módulo X …” a módulos
                 </label>
               </div>
               <div className="bg-gray-900/50 rounded border border-gray-700 p-3">

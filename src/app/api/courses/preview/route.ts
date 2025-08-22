@@ -3,7 +3,12 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { z } from "zod";
 
-const schema = z.object({ index: z.string().min(1) });
+const schema = z.object({
+  index: z.string().min(1),
+  options: z
+    .object({ promoteModuloHeadings: z.boolean().optional() })
+    .optional(),
+});
 
 async function userId(email: string): Promise<string> {
   const { query } = await import("@/lib/database");
@@ -18,27 +23,28 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
     const body = await req.json();
-    const { index } = schema.parse(body);
-    const { parseIndex, TAG_REGEX } = await import("@/lib/parser");
-    const parsed = parseIndex(index);
+    const { index, options } = schema.parse(body);
+    const { parseIndexHierarchical } = await import("@/lib/parser");
+    const parsed = parseIndexHierarchical(index, options);
 
     // duplicates within the pasted index (per module)
     const modules = parsed.modules.map((m) => {
       const counts: Record<string, number> = {};
-      for (const t of m.tags) counts[t] = (counts[t] || 0) + 1;
+      const flatTags = m.sections.flatMap((s) => s.tags);
+      for (const t of flatTags) counts[t] = (counts[t] || 0) + 1;
       const duplicates = Object.entries(counts)
         .filter(([_, c]) => c > 1)
         .map(([tag, c]) => ({ tag, count: c }));
       return {
         title: m.title || "Sem Título",
-        total: m.tags.length,
+        total: flatTags.length,
         unique: Object.keys(counts).length,
         duplicates,
-        tags: m.tags,
+        tags: flatTags,
       };
     });
 
-    const allTags = Array.from(new Set(parsed.modules.flatMap((m) => m.tags)));
+    const allTags = Array.from(new Set(modules.flatMap((m) => m.tags)));
 
     // check duplicates across user's library
     const uid = await userId(session.user.email);
@@ -65,7 +71,7 @@ export async function POST(req: Request) {
 
     const summary = {
       modules: modules.length,
-      episodes: parsed.modules.reduce((acc, m) => acc + m.tags.length, 0),
+      episodes: modules.reduce((acc, m) => acc + m.total, 0),
       uniqueTags: allTags.length,
       hasDuplicatesWithin: modules.some((m) => m.duplicates.length > 0),
       duplicatesAcrossLibrary: existing.length,

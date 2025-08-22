@@ -10,6 +10,7 @@ const createSchema = z.object({
   options: z
     .object({
       dedupeWithinModule: z.boolean().optional(),
+      promoteModuloHeadings: z.boolean().optional(),
     })
     .optional(),
 });

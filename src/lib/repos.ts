@@ -1,6 +1,6 @@
 import { query } from "@/lib/database";
 import { v4 as uuid } from "uuid";
-import { parseIndex } from "@/lib/parser";
+import { parseIndexHierarchical } from "@/lib/parser";
 
 export async function createUser({
   name,
@@ -28,14 +28,16 @@ export async function createCourseFromIndex({
   userId: string;
   title: string;
   rawIndex: string;
-  options?: { dedupeWithinModule?: boolean };
+  options?: { dedupeWithinModule?: boolean; promoteModuloHeadings?: boolean };
 }) {
   const courseId = uuid();
   await query(
     "INSERT INTO courses (id, user_id, title, raw_index) VALUES ($1,$2,$3,$4)",
     [courseId, userId, title, rawIndex],
   );
-  const parsed = parseIndex(rawIndex);
+  const parsed = parseIndexHierarchical(rawIndex, {
+    promoteModuloHeadings: options?.promoteModuloHeadings,
+  });
   let created = 0;
   let reused = 0;
   let modulePos = 1;
@@ -46,10 +48,11 @@ export async function createCourseFromIndex({
       [moduleId, courseId, m.title, modulePos++],
     );
     let epPos = 1;
-    // dedupe within module if requested
+    // coletar tags de todas as seções e opcionalmente deduplicar
+    const collected = m.sections.flatMap((s) => s.tags);
     const moduleTags = options?.dedupeWithinModule
-      ? Array.from(new Set(m.tags))
-      : m.tags;
+      ? Array.from(new Set(collected))
+      : collected;
     for (const tag of moduleTags) {
       const epId = uuid();
       const epTitle = `Aula ${tag}`;
