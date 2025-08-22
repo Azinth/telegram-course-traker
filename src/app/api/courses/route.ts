@@ -27,16 +27,35 @@ async function userId(email: string): Promise<string> {
 }
 
 export async function POST(req: Request) {
-  const session = await getServerSession(authOptions);
-  if (!session?.user?.email)
-    return NextResponse.json({ error: "unauthorized" }, { status: 401 });
-  const body = await req.json();
-  const data = createSchema.parse(body);
-  const uid = await userId(session.user.email);
-  const c = await createCourseFromIndex({
-    userId: uid,
-    title: data.title,
-    rawIndex: data.index,
-  });
-  return NextResponse.json({ id: c.id });
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.email)
+      return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+    const body = await req.json();
+    const data = createSchema.parse(body);
+
+    // validate parsed tags before attempting inserts so we can return
+    // a friendly error when tags already exist (episodes.tag is UNIQUE)
+    const { parseIndex } = await import("@/lib/parser");
+    const parsed = parseIndex(data.index);
+    const tags = parsed.modules.flatMap((m) => m.tags);
+    if (!tags.length)
+      return NextResponse.json(
+        { error: "Índice inválido: sem tags encontradas" },
+        { status: 400 },
+      );
+
+    // A partir de agora, a unicidade é por módulo (module_id, tag), então não bloqueamos
+    // antecipadamente. Conflitos serão ignorados na inserção (upsert) e o restante será criado.
+
+    const uid = await userId(session.user.email);
+    const c = await createCourseFromIndex({
+      userId: uid,
+      title: data.title,
+      rawIndex: data.index,
+    });
+    return NextResponse.json({ id: c.id });
+  } catch (e: any) {
+    return NextResponse.json({ error: e?.message || "Erro" }, { status: 400 });
+  }
 }

@@ -4,6 +4,7 @@ import Link from "next/link";
 import Timer from "@/components/Timer";
 import EpisodeNoteModal from "@/components/EpisodeNoteModal";
 import CourseProgressBar from "@/components/CourseProgressBar";
+import ModuleProgressCircle from "@/components/ModuleProgressCircle";
 
 export default function CourseClient({ course }: { course: any }) {
   const [data, setData] = useState(course);
@@ -293,12 +294,32 @@ export default function CourseClient({ course }: { course: any }) {
                 onClick={() => toggleModule(m.id, fallbackOpen)}
                 className="w-full flex items-center justify-between px-4 py-3 text-left"
               >
-                <span className="font-medium">{m.title}</span>
-                {open ? (
-                  <ChevronUp className="w-5 h-5" />
-                ) : (
-                  <ChevronDown className="w-5 h-5" />
-                )}
+                <span className="font-medium truncate pr-3">{m.title}</span>
+                {(() => {
+                  const totalCount = moduleEpisodes.length;
+                  const doneCount = moduleEpisodes.filter(
+                    (e: any) => e.completed,
+                  ).length;
+                  const ratio = totalCount ? doneCount / totalCount : 0;
+                  return (
+                    <div className="flex items-center gap-3 text-xs text-gray-300">
+                      <span className="hidden sm:inline whitespace-nowrap">
+                        {totalCount} aulas
+                      </span>
+                      <div className="flex items-center gap-1">
+                        <ModuleProgressCircle value={ratio} />
+                        <span className="sr-only">
+                          {Math.round(ratio * 100)}%
+                        </span>
+                      </div>
+                      {open ? (
+                        <ChevronUp className="w-5 h-5" />
+                      ) : (
+                        <ChevronDown className="w-5 h-5" />
+                      )}
+                    </div>
+                  );
+                })()}
               </button>
               {open && (
                 <div className="px-4 pb-4 border-t border-gray-700">
@@ -314,6 +335,11 @@ export default function CourseClient({ course }: { course: any }) {
                       m.episodes.map((e: any) => {
                         const done = e.completed;
                         const fav = favorites[e.id];
+                        const tagLabel = (e.tag || "")
+                          .toString()
+                          .startsWith("#")
+                          ? e.tag
+                          : `#${e.tag}`;
                         return (
                           <div
                             key={e.id}
@@ -333,7 +359,7 @@ export default function CourseClient({ course }: { course: any }) {
                               ) : (
                                 <Circle className="w-4 h-4 text-gray-400" />
                               )}
-                              <span>#{e.tag}</span>
+                              <span>{tagLabel}</span>
                             </button>
                             <div className="ml-auto flex gap-1">
                               <button

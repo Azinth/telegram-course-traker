@@ -45,13 +45,18 @@ export async function createCourseFromIndex({
     for (const tag of m.tags) {
       const epId = uuid();
       const epTitle = `Aula ${tag}`;
-      await query(
-        "INSERT INTO episodes (id, module_id, tag, title, position) VALUES ($1,$2,$3,$4,$5)",
+      // Insere episódio ignorando conflito por (module_id, tag) e retorna o id real
+      const { rows: epRows } = await query(
+        `INSERT INTO episodes (id, module_id, tag, title, position)
+         VALUES ($1,$2,$3,$4,$5)
+         ON CONFLICT (module_id, tag) DO UPDATE SET title=EXCLUDED.title
+         RETURNING id`,
         [epId, moduleId, tag, epTitle, epPos++],
       );
+      const realEpId = epRows[0]?.id || epId;
       await query(
-        "INSERT INTO user_episode_progress (user_id, episode_id, completed) VALUES ($1,$2,$3) ON CONFLICT DO NOTHING",
-        [userId, epId, false],
+        "INSERT INTO user_episode_progress (user_id, episode_id, completed) VALUES ($1,$2,$3) ON CONFLICT (user_id, episode_id) DO NOTHING",
+        [userId, realEpId, false],
       );
     }
   }
