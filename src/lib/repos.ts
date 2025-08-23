@@ -31,9 +31,15 @@ export async function createCourseFromIndex({
   options?: { dedupeWithinModule?: boolean; promoteModuloHeadings?: boolean };
 }) {
   const courseId = uuid();
+  // Determine next position for this user's courses
+  const nextPosRes = await query(
+    "SELECT COALESCE(MAX(position), 0) + 1 AS pos FROM courses WHERE user_id=$1",
+    [userId],
+  );
+  const nextPos = Number(nextPosRes.rows?.[0]?.pos || 1);
   await query(
-    "INSERT INTO courses (id, user_id, title, raw_index) VALUES ($1,$2,$3,$4)",
-    [courseId, userId, title, rawIndex],
+    "INSERT INTO courses (id, user_id, title, raw_index, position) VALUES ($1,$2,$3,$4,$5)",
+    [courseId, userId, title, rawIndex, nextPos],
   );
   const parsed = parseIndexHierarchical(rawIndex, {
     promoteModuloHeadings: options?.promoteModuloHeadings,
@@ -79,7 +85,7 @@ export async function createCourseFromIndex({
 export async function listCoursesWithProgress(userId: string) {
   const courses = (
     await query(
-      "SELECT id, title, created_at, completed_at FROM courses WHERE user_id=$1 ORDER BY created_at DESC",
+      "SELECT id, title, created_at, completed_at FROM courses WHERE user_id=$1 ORDER BY position ASC, created_at DESC",
       [userId],
     )
   ).rows;
@@ -112,6 +118,33 @@ export async function listCoursesWithProgress(userId: string) {
     c.total_seconds = Number(time || 0);
   }
   return courses;
+}
+
+export async function reorderCourses(userId: string, orderedIds: string[]) {
+  // Apply positions sequentially; use a CASE expression for efficiency
+  if (!orderedIds.length) return;
+  const values = orderedIds
+    .map((id, idx) => `('${id.replace(/'/g, "''")}', ${idx + 1})`)
+    .join(",");
+  await query(
+    `UPDATE courses AS c
+     SET position = v.pos
+     FROM (VALUES ${values}) AS v(id, pos)
+     WHERE c.id = v.id AND c.user_id = $1`,
+    [userId],
+  );
+}
+
+export async function bulkDeleteCourses(userId: string, ids: string[]) {
+  if (!ids?.length) return { deleted: 0 };
+  // Parameterize to avoid SQL injection
+  const params = [userId, ...ids];
+  const placeholders = ids.map((_, i) => `$${i + 2}`).join(",");
+  const res = await query(
+    `DELETE FROM courses WHERE user_id=$1 AND id IN (${placeholders})`,
+    params,
+  );
+  return { deleted: res.rowCount || 0 };
 }
 
 export async function getCourseDetail(userId: string, courseId: string) {
@@ -252,6 +285,14 @@ export async function markCourseCompleted(userId: string, courseId: string) {
     `UPDATE courses SET completed_at=NOW() WHERE id=$1 AND user_id=$2`,
     [courseId, userId],
   );
+}
+
+export async function deleteCourse(userId: string, courseId: string) {
+  const res = await query(`DELETE FROM courses WHERE id=$1 AND user_id=$2`, [
+    courseId,
+    userId,
+  ]);
+  return (res.rowCount ?? 0) > 0;
 }
 
 export async function updateUserName(userId: string, name: string) {

@@ -14,10 +14,17 @@ type Toast = {
   type: ToastType;
   message: string;
   duration?: number; // ms
+  actionLabel?: string;
+  onAction?: () => void;
 };
 
 type ToastContextType = {
-  show: (message: string, type?: ToastType, duration?: number) => void;
+  show: (
+    message: string,
+    type?: ToastType,
+    duration?: number,
+    action?: { label: string; onAction: () => void },
+  ) => void;
   success: (message: string, duration?: number) => void;
   error: (message: string, duration?: number) => void;
   info: (message: string, duration?: number) => void;
@@ -38,8 +45,20 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const show = useCallback(
-    (message: string, type: ToastType = "info", duration = 3000) => {
-      const t: Toast = { id: uid(), type, message, duration };
+    (
+      message: string,
+      type: ToastType = "info",
+      duration = 3000,
+      action?: { label: string; onAction: () => void },
+    ) => {
+      const t: Toast = {
+        id: uid(),
+        type,
+        message,
+        duration,
+        actionLabel: action?.label,
+        onAction: action?.onAction,
+      };
       setToasts((prev) => [...prev, t]);
       if (duration && duration > 0) {
         window.setTimeout(() => remove(t.id), duration);
@@ -113,6 +132,19 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
                 {t.type === "success" ? "✓" : t.type === "error" ? "⚠" : "ℹ"}
               </span>
               <div className="flex-1 whitespace-pre-wrap">{t.message}</div>
+              {t.actionLabel && t.onAction ? (
+                <button
+                  onClick={() => {
+                    try {
+                      t.onAction?.();
+                    } catch {}
+                    remove(t.id);
+                  }}
+                  className="ml-2 underline hover:opacity-90"
+                >
+                  {t.actionLabel}
+                </button>
+              ) : null}
               <button
                 onClick={() => remove(t.id)}
                 className="ml-2 opacity-80 hover:opacity-100"
