@@ -1,7 +1,11 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { createCourseFromIndex, listCoursesWithProgress } from "@/lib/repos";
+import {
+  createCourseFromIndex,
+  listCoursesWithProgress,
+  listCoursesWithProgressPaged,
+} from "@/lib/repos";
 import { z } from "zod";
 
 const createSchema = z.object({
@@ -15,15 +19,29 @@ const createSchema = z.object({
     .optional(),
 });
 
-export async function GET() {
+export async function GET(req: Request) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.email)
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   // fetch user id
   // minimal query to resolve id
-  return NextResponse.json(
-    await listCoursesWithProgress(await userId(session.user.email)),
-  );
+  const uid = await userId(session.user.email);
+
+  const { searchParams } = new URL(req.url);
+  const page = Number(searchParams.get("page") || "1");
+  const perPage = Number(searchParams.get("perPage") || "10");
+  if (Number.isFinite(page) && Number.isFinite(perPage)) {
+    const data = await listCoursesWithProgressPaged(uid, page, perPage);
+    return NextResponse.json(data);
+  }
+  // fallback legacy
+  const legacy = await listCoursesWithProgress(uid);
+  return NextResponse.json({
+    courses: legacy,
+    total: legacy.length,
+    page: 1,
+    perPage: legacy.length,
+  });
 }
 
 async function userId(email: string): Promise<string> {

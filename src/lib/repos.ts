@@ -120,6 +120,66 @@ export async function listCoursesWithProgress(userId: string) {
   return courses;
 }
 
+export async function countUserCourses(userId: string): Promise<number> {
+  const { rows } = await query(
+    `SELECT COUNT(*)::int AS total FROM courses WHERE user_id=$1`,
+    [userId],
+  );
+  return Number(rows[0]?.total || 0);
+}
+
+export async function listCoursesWithProgressPaged(
+  userId: string,
+  page: number,
+  perPage: number,
+) {
+  // sanitize
+  const allowed = [10, 50, 100];
+  if (!allowed.includes(perPage)) perPage = 10;
+  const total = await countUserCourses(userId);
+  const maxPage = Math.max(1, Math.ceil(total / perPage));
+  const safePage = Math.min(Math.max(1, page || 1), maxPage);
+  const offset = (safePage - 1) * perPage;
+
+  const courses = (
+    await query(
+      `SELECT id, title, created_at, completed_at
+       FROM courses
+       WHERE user_id=$1
+       ORDER BY position ASC, created_at DESC
+       LIMIT $2 OFFSET $3`,
+      [userId, perPage, offset],
+    )
+  ).rows;
+
+  for (const c of courses) {
+    const totalEp = (
+      await query(
+        `SELECT COUNT(*)::int AS total FROM episodes e JOIN modules m ON e.module_id=m.id WHERE m.course_id=$1`,
+        [c.id],
+      )
+    ).rows[0].total;
+    const done = (
+      await query(
+        `SELECT COUNT(*)::int AS done FROM user_episode_progress p JOIN episodes e ON p.episode_id=e.id JOIN modules m ON e.module_id=m.id WHERE p.user_id=$1 AND m.course_id=$2 AND p.completed=TRUE`,
+        [userId, c.id],
+      )
+    ).rows[0].done;
+    const time = (
+      await query(
+        `SELECT COALESCE(SUM(EXTRACT(EPOCH FROM (COALESCE(ended_at, NOW()) - started_at))),0)::bigint AS seconds FROM course_sessions WHERE user_id=$1 AND course_id=$2`,
+        [userId, c.id],
+      )
+    ).rows[0].seconds;
+    c.progress = totalEp ? Math.round((done / totalEp) * 100) : 0;
+    c.total_episodes = Number(totalEp || 0);
+    c.done_episodes = Number(done || 0);
+    c.total_seconds = Number(time || 0);
+  }
+
+  return { courses, total, page: safePage, perPage };
+}
+
 export async function reorderCourses(userId: string, orderedIds: string[]) {
   // Apply positions sequentially; use a CASE expression for efficiency
   if (!orderedIds.length) return;
