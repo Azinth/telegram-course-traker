@@ -1,6 +1,6 @@
 import { query } from "@/lib/database";
 import { v4 as uuid } from "uuid";
-import { parseIndex } from "@/lib/parser";
+import { parseIndexHierarchical } from "@/lib/parser";
 
 export async function createUser({
   name,
@@ -23,17 +23,23 @@ export async function createCourseFromIndex({
   userId,
   title,
   rawIndex,
+  options,
 }: {
   userId: string;
   title: string;
   rawIndex: string;
+  options?: { dedupeWithinModule?: boolean; promoteModuloHeadings?: boolean };
 }) {
   const courseId = uuid();
   await query(
     "INSERT INTO courses (id, user_id, title, raw_index) VALUES ($1,$2,$3,$4)",
     [courseId, userId, title, rawIndex],
   );
-  const parsed = parseIndex(rawIndex);
+  const parsed = parseIndexHierarchical(rawIndex, {
+    promoteModuloHeadings: options?.promoteModuloHeadings,
+  });
+  let created = 0;
+  let reused = 0;
   let modulePos = 1;
   for (const m of parsed.modules) {
     const moduleId = uuid();
@@ -42,7 +48,12 @@ export async function createCourseFromIndex({
       [moduleId, courseId, m.title, modulePos++],
     );
     let epPos = 1;
-    for (const tag of m.tags) {
+    // coletar tags de todas as seções e opcionalmente deduplicar
+    const collected = m.sections.flatMap((s) => s.tags);
+    const moduleTags = options?.dedupeWithinModule
+      ? Array.from(new Set(collected))
+      : collected;
+    for (const tag of moduleTags) {
       const epId = uuid();
       const epTitle = `Aula ${tag}`;
       // Insere episódio ignorando conflito por (module_id, tag) e retorna o id real
@@ -54,13 +65,15 @@ export async function createCourseFromIndex({
         [epId, moduleId, tag, epTitle, epPos++],
       );
       const realEpId = epRows[0]?.id || epId;
+      if (realEpId === epId) created += 1;
+      else reused += 1;
       await query(
         "INSERT INTO user_episode_progress (user_id, episode_id, completed) VALUES ($1,$2,$3) ON CONFLICT (user_id, episode_id) DO NOTHING",
         [userId, realEpId, false],
       );
     }
   }
-  return { id: courseId };
+  return { id: courseId, summary: { created, reused } };
 }
 
 export async function listCoursesWithProgress(userId: string) {

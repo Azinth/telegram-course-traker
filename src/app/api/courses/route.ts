@@ -7,6 +7,12 @@ import { z } from "zod";
 const createSchema = z.object({
   title: z.string().min(3),
   index: z.string().min(3),
+  options: z
+    .object({
+      dedupeWithinModule: z.boolean().optional(),
+      promoteModuloHeadings: z.boolean().optional(),
+    })
+    .optional(),
 });
 
 export async function GET() {
@@ -34,11 +40,12 @@ export async function POST(req: Request) {
     const body = await req.json();
     const data = createSchema.parse(body);
 
-    // validate parsed tags before attempting inserts so we can return
-    // a friendly error when tags already exist (episodes.tag is UNIQUE)
-    const { parseIndex } = await import("@/lib/parser");
-    const parsed = parseIndex(data.index);
-    const tags = parsed.modules.flatMap((m) => m.tags);
+    // validate parsed tags before attempting inserts
+    const { parseIndexHierarchical } = await import("@/lib/parser");
+    const parsed = parseIndexHierarchical(data.index, data.options);
+    const tags = parsed.modules.flatMap((m) =>
+      m.sections.flatMap((s) => s.tags),
+    );
     if (!tags.length)
       return NextResponse.json(
         { error: "Índice inválido: sem tags encontradas" },
@@ -53,8 +60,9 @@ export async function POST(req: Request) {
       userId: uid,
       title: data.title,
       rawIndex: data.index,
+      options: data.options,
     });
-    return NextResponse.json({ id: c.id });
+    return NextResponse.json({ id: c.id, summary: c.summary });
   } catch (e: any) {
     return NextResponse.json({ error: e?.message || "Erro" }, { status: 400 });
   }
